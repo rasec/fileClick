@@ -1,0 +1,33 @@
+/* Contenedor */
+.jFileClickContainer {position:relative}
+
+/* Estilos del contenedor del input file */
+.jFileInputContainer {
+    height: 20px;
+    left:0;
+    overflow: hidden;
+    position: absolute;
+    width: 100px;
+    z-index: 1;
+}
+
+/* Estilos del input file */
+.jInputFile {
+    right:0;
+    opacity: 0;
+	filter:alpha(opacity=0);
+    position: absolute;
+    top: 0;
+    z-index: 1;
+    cursor:pointer;
+    font-size:300px
+}
+
+/* Clase de Hover del elemento que dispara el dialogo */
+.jUploadButtonHover {color:#000}
+
+/* Estilos del item */
+.jUploadList li {color:#333;margin-bottom:10px}
+
+/* Estilo de la X para remover un item */
+.jRemoveFile {margin-left:10px;border-left:1px solid #333;padding-left:5px}

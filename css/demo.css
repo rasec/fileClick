@@ -1,0 +1,9 @@
+/**** RESET + CLEARFIX ****/
+*{margin:0;padding:0;outline:0;font-size:1em;font-weight:normal;font-style:normal;border:0;text-decoration:none;list-style-type:none}
+.clearfix:after{visibility:hidden;display:block;font-size:0;content:" ";clear:both;height:0px}.clearfix{display:inline-block}* html .clearfix{height:1%}.clearfix{display:block}
+/**************************/
+
+body {padding:50px;font-family:arial}
+h1 {font-size:20px;font-weight:bold;margin-bottom:20px}
+a {color:#666}
+a:hover {color:#000}
