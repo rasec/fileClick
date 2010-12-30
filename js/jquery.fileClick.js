@@ -163,6 +163,7 @@
 					Eventos del input file
 					********************* */
 					function bindEvents() {
+						// instancia actual del input
 						var input = fileInput.getInstance();
 
 						// clase de hover para el link
