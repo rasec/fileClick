@@ -166,22 +166,15 @@
 						// instancia actual del input
 						var input = fileInput.getInstance();
 
+						input
 						// clase de hover para el link
-						input.bind('mouseover mouseout',
+						.bind('mouseover mouseout',
 							function () {
 								link.toggleClass(o.hoverClass);
 							}
-						);
-
-						// Evento que se dispara luego de seleccionar un fichero
-						// IE7
-						if ($.browser.msie && $.browser.version.substr(0, 1) == 7) {
-							input[0].attachEvent("onpropertychange", onSelect);
-						}
-						// OTROS
-						else {
-							input.change(onSelect);
-						}
+						)
+						// evento que se dispara luego de seleccionar un fichero
+						.change(onSelect);
 					};
 
 					/* **********************************
