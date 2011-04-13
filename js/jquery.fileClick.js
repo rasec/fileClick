@@ -1,4 +1,4 @@
-/* jQuery fileClick Plugin v1.3
+/* jQuery fileClick Plugin v1.4
  * ----------------------------------------------------------
  * Author: Denis Ciccale (dciccale@gmail.com)
  *
@@ -10,63 +10,63 @@
 	$.fn.extend({
 		fileClick: function(options) {
 			
-			// namespace
-			var fileClick = {};
-			
-			// defaults
-			fileClick.defaults = {
+			// default options
+			var defaults = {
 				hoverClass: "jUploadButtonHover",
-				// template de cada fichero nuevo
-				ItemTemplate: '<li class="{ItemSelector}">{FileName}<a href="#" class="jRemoveFile">X</a></li>',
+				ItemTemplate: '<li class="{ItemSelector}"><a href="#" class="jRemoveFile">X</a>{FileName}</li>',
 				InputID: "InputID",
-				InputName: "Files"
-			};
+				InputName: "Files",
+				ItemSelector: "jFile",
+				inputDefaultClass: "jInputFile"
+			},
 			
-			fileClick.options = $.extend(fileClick.defaults, options);
+			options = $.extend({}, defaults, options);
 			
-			return this.each(function() {
-				var o = fileClick.options, 
+			return this.each(function(i) {
+				var o = options,
 					container = $(this),
 					link = container.find(".jAttachDocument"),
-					removeFileLink = container.find(".jRemoveFile"),
 					inputContainer = container.find(".jFileInputContainer"),
-					input = container.find(".jInputFile"),
 					NoAttachments = container.find(".jNoAttachments"),
-					FilesList = container.find(".jUploadList"),
-					FileCount = 0,
-					FileNames = [],
-					ItemSelector = "jFile",
-					inputDefaultClass = "jInputFile";
+					FilesList = container.find(".jUploadList");
 					
-					// mantengo un contador global de cada instancia de fileClick
-					window.fileClick = (window.fileClick || 0) + 1;
-					// lo guardo en esta variable para que el id de los inputs sea diferente
-					var fileClickCount = window.fileClick;
 					
-				   /* ******************************************************
-					Funcion que se ejecuta despues de seleccionar un fichero
-					******************************************************* */
-					function onSelect(e) {
-						// nombre del fichero (valor del target del input)
-						var fileName = fileInput.getInstance().val();
-
+					/* **************************
+					Guarda la lista de ficheros
+					*************************** */
+					var Files = function() {
+						var FileNames = [];
+						
+						return {
+							add: function(fileName) { FileNames.push(fileName); },
+							remove: function (fileIndex) { FileNames.splice(fileIndex-1, 1); },
+							count: function () { return FileNames.length; },
+							names: function () { return FileNames; }
+						}					
+					}();
+					
+					
+				   /* *****************************************
+					Funcion después de seleccionar un fichero
+					***************************************** */
+					function onSelect() {
 						// en opera y en ie agrega todo el path, nos quedamos solo con el nombre del fichero
-						fileName = fileName.match(/[^\/\\]+$/)[0];
+						var fileName = fileInput.getValue().match(/[^\/\\]+$/)[0];
 
-						// verifico que no haya un fichero con el mismo nombre
+						// si existe un fichero con el mismo nombre muestro un error
 						if (existFile(fileName)) {
 							alert("Ya existe un fichero con ese nombre");
 						}
+						// si no lo agrego a la lista
 						else {
-							// agrego el fichero a la lista
 							addFile(fileName);
 						}
 						
-						// quito la clase de hover del link
+						// quito la clase de hover del link, porque a veces se queda
 						link.removeClass(o.hoverClass);
 						
-						// actualizo el input
-						refreshInput();
+						// creo un nuevo input
+						createInput();
 					}
 
 
@@ -76,25 +76,21 @@
 					function addFile(fileName) {
 						var item, inputClone;
 						
-						// sumo 1 al contador de ficheros
-						FileCount = FileCount + 1;
-						
-						// agrego el nombre a la lista
-						FileNames.push(fileName);
+						// guardo el fichero
+						Files.add(fileName);
 
 						// template local
 						item = o.ItemTemplate;
 
 						// reemplazo las variables en el template
-						item = item.replace("{ItemSelector}", ItemSelector);
-						item = item.replace("{FileName}", fileName);
+						item = item.replace("{ItemSelector}", o.ItemSelector).replace("{FileName}", fileName);
 
 						// cojo el input modifico el id para que sea unico y lo oculto
 						inputClone = fileInput.getInstance()
 						.unbind()
 						.attr({
-								"id": o.InputID + fileClickCount + "_" + FileCount,
-								"name": o.InputName + fileClickCount + "[]"
+							"id": o.InputID + i + "_" + Files.count(),
+							"name": o.InputName + i + "[]"
 						})
 						.css({ top: -3000 });
 
@@ -104,41 +100,38 @@
 						// agrego el item
 						FilesList.append(item);
 
-						// si hay ficheros oculto el item de "no hay documentos adjuntos"
-						if (FileCount > 0) {
+						// si hay ficheros, oculto el item de "no hay documentos adjuntos"
+						if (Files.count() > 0 && NoAttachments.is(":visible")) {
 							NoAttachments.hide();
 						}
-					};
+					}
 
 
 					/* ***************************
 					Quita un fichero de la lista
 					**************************** */
-					function removeFile(file) {
-						// resto 1 al contador de ficheros
-						FileCount = FileCount - 1;
-						
-						// quito el fichero del array de nombres index-1 porque esta contando el item de "no hay documentos adjuntos"
-						FileNames.splice(file.index()-1, 1)
+					function removeFile(item) {
+						// quito el fichero de la lista guardada
+						Files.remove(item.index());
 
 						// quito el item de la lista
-						file.remove();
+						item.remove();
 
 						// si no hay ficheros muestro el item de "no hay documentos adjuntos"
-						if (FileCount == 0) {
+						if (Files.count() == 0) {
 							NoAttachments.show();
 						}
-					};
+					}
 
 
 					/* ****************************************
 					Accion que remueve un fichero de la lista
 					***************************************** */
-					removeFileLink.live('click', function (e) {
+					container.delegate('.jRemoveFile', 'click', function (e) {
 						e.preventDefault();
 						
 						// busco el item
-						var item = $(this).parents("." + ItemSelector);
+						var item = $(this).parents("." + o.ItemSelector);
 
 						// quito el item
 						removeFile(item);
@@ -146,70 +139,62 @@
 
 
 					/* *************************************************
-					Verifico que no haya un fichero con el mismo nombre
+					Verifica que no haya un fichero con el mismo nombre
 					************************************************** */
 					function existFile(fileName) {
-						var i;
-						for (i = 0; i < FileNames.length; i++) {
-							if (FileNames[i] == fileName) {
-								return true;
-							}
+						var FileNames = Files.names(), i = FileNames.length, exists = false;
+						
+						while (i-- && !exists) {
+							exists = FileNames[i] == fileName;
 						}
-						return false;
-					};
-
-
-					/* ********************
-					Eventos del input file
-					********************* */
-					function bindEvents() {
-						// instancia actual del input
-						var input = fileInput.getInstance();
-
-						input
-						// clase de hover para el link
-						.bind('mouseover mouseout',
-							function () {
-								link.toggleClass(o.hoverClass);
-							}
-						)
-						// evento que se dispara luego de seleccionar un fichero
-						.change(onSelect);
-					};
-
-					/* **********************************
-					Funcion que actualiza el input file
-					*********************************** */
-					function refreshInput() {
-						// creo el nuevo input
-						var newInput = $("<input type='file' class='" + inputDefaultClass + "' id='" + o.InputID + fileClickCount + "' name='" + o.InputName + fileClickCount + "[]' />");
-
-						// guardo la instancia del input
-						fileInput.setInstance(newInput);
-
-						// hago un bind de los eventos
-						bindEvents(newInput);
-
-						// inserto el nuevo input
-						inputContainer.html(newInput);
-					};
+						
+						return exists;
+					}
 
 					
-					/* **************************************************
-					Objeto que guarda la instancia del input file actual
-					*************************************************** */
+					/* **********************
+					Instancia de cada input
+					*********************** */
 					var fileInput = {
 						setInstance: function (elem) { this.newInput = elem; },
-						getInstance: function () { return this.newInput || input; }
+						getInstance: function () { return this.newInput; },
+						getValue: function () { return this.newInput.val(); }
 					};
 					
 					
-					/* **************
-					Inicio el script
-					*************** */
-					// creo los inputs
-					refreshInput();
+					/* *****************
+					Crea el input file
+					****************** */
+					var createInput = (function () {
+					
+						function init() {
+							// creo el nuevo input
+							var newInput = $("<input type='file' class='" + o.inputDefaultClass + "' id='" + o.InputID + i + "' name='" + o.InputName + i + "[]' />");
+
+							// guardo la instancia del input
+							fileInput.setInstance(newInput);
+
+							// hago un bind de los eventos
+							newInput
+							// clase de hover para el link
+							.bind('mouseover mouseout',
+								function () {
+									link.toggleClass(o.hoverClass);
+								}
+							)
+							// evento que se dispara luego de seleccionar un fichero
+							.change(onSelect);
+
+							// inserto el nuevo input
+							inputContainer.html(newInput);
+						}
 						
+						init();
+						
+						return init;
+					})()
+					
+					
 					// seteo el tamaño del contenedor del input file para encajar con el elemento disparador
 					inputContainer.css({ width: link[0].offsetWidth, height: link[0].offsetHeight });
 			});
