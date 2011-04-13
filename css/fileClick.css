@@ -30,4 +30,4 @@
 .jUploadList li {color:#333;margin-bottom:10px}
 
 /* Estilo de la X para remover un item */
-.jRemoveFile {margin-left:10px;border-left:1px solid #333;padding-left:5px}
+.jRemoveFile {margin-right:10px;border-right:1px solid #333;padding-right:5px}
